@@ -46,8 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (updates: Partial<User>) => {
+    console.log('AuthContext updateProfile called with:', updates);
     if (user) {
       const updatedUser = localStorageService.updateUserProfile(user.id, updates);
+      console.log('Updated user from localStorageService:', updatedUser);
       setUser(updatedUser);
       setIsProfileComplete(localStorageService.isProfileComplete(updatedUser));
     }

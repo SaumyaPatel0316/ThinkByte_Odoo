@@ -11,9 +11,11 @@ import {
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
 
+
 export function Profile() {
   const { user, updateProfile, isProfileComplete } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
     name: user?.name || '',
     location: user?.location || '',
@@ -23,13 +25,47 @@ export function Profile() {
     skillsWanted: user?.skillsWanted || [],
     availability: user?.availability || [],
   });
+
+  // Update formData when user data changes
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        location: user.location || '',
+        profilePhoto: user.profilePhoto || '',
+        isPublic: user.isPublic ?? true,
+        skillsOffered: user.skillsOffered || [],
+        skillsWanted: user.skillsWanted || [],
+        availability: user.availability || [],
+      });
+    }
+  }, [user]);
   const [newSkillOffered, setNewSkillOffered] = useState('');
   const [newSkillWanted, setNewSkillWanted] = useState('');
   const [newAvailability, setNewAvailability] = useState('');
 
   const handleSave = async () => {
-    await updateProfile(formData);
-    setIsEditing(false);
+    console.log('Saving profile data:', formData);
+    setSaveStatus('saving');
+    try {
+      await updateProfile(formData);
+      console.log('Profile saved successfully');
+      setSaveStatus('success');
+      setIsEditing(false);
+      
+      // Reset success status after 3 seconds
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setSaveStatus('error');
+      
+      // Reset error status after 3 seconds
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
+    }
   };
 
   const handleCancel = () => {
@@ -111,6 +147,18 @@ export function Profile() {
               <span className="text-sm font-medium">Profile incomplete - Add your skills and availability</span>
             </div>
           )}
+          {saveStatus === 'success' && (
+            <div className="mt-2 flex items-center space-x-2 text-green-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium">Profile saved successfully!</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="mt-2 flex items-center space-x-2 text-red-600">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-sm font-medium">Error saving profile. Please try again.</span>
+            </div>
+          )}
         </div>
         {!isEditing ? (
           <button
@@ -130,9 +178,21 @@ export function Profile() {
             </button>
             <button
               onClick={handleSave}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={saveStatus === 'saving'}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                saveStatus === 'saving' 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : saveStatus === 'success'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : saveStatus === 'error'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
             >
-              Save Changes
+              {saveStatus === 'saving' ? 'Saving...' : 
+               saveStatus === 'success' ? 'Saved!' : 
+               saveStatus === 'error' ? 'Error!' : 
+               'Save Changes'}
             </button>
           </div>
         )}
@@ -145,11 +205,18 @@ export function Profile() {
             {/* Profile Photo */}
             <div className="text-center mb-6">
               {formData.profilePhoto ? (
-                <img 
-                  src={formData.profilePhoto} 
-                  alt={formData.name}
-                  className="h-24 w-24 rounded-full object-cover mx-auto mb-4"
-                />
+                <div className="relative">
+                  <img 
+                    src={formData.profilePhoto} 
+                    alt={formData.name}
+                    className="h-24 w-24 rounded-full object-cover mx-auto mb-4"
+                  />
+                  {isEditing && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                      ✓
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="h-24 w-24 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <UserIcon className="h-12 w-12 text-gray-500 dark:text-gray-400" />
@@ -163,9 +230,25 @@ export function Profile() {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        console.log('File selected:', file.name, file.size);
+                        
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('File size must be less than 5MB');
+                          return;
+                        }
+                        
                         const reader = new FileReader();
                         reader.onloadend = () => {
-                          setFormData(prev => ({ ...prev, profilePhoto: reader.result as string }));
+                          console.log('File converted to base64, length:', (reader.result as string).length);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            profilePhoto: reader.result as string 
+                          }));
+                        };
+                        reader.onerror = () => {
+                          console.error('Error reading file');
+                          alert('Error reading file. Please try again.');
                         };
                         reader.readAsDataURL(file);
                       }

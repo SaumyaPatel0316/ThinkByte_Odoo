@@ -123,6 +123,8 @@ class LocalStorageService {
 
   // Update user profile
   updateUserProfile(userId: string, updates: Partial<User>): User {
+    console.log('Updating user profile:', { userId, updates });
+    
     const users = this.getUsers();
     const userIndex = users.findIndex(u => u.id === userId);
     
@@ -130,15 +132,20 @@ class LocalStorageService {
       throw new Error('User not found');
     }
 
+    console.log('Before update:', users[userIndex]);
+
     // Update user
     users[userIndex] = { ...users[userIndex], ...updates };
     this.saveUsers(users);
+
+    console.log('After update:', users[userIndex]);
 
     // Update current user if it's the same user
     const currentUser = this.getCurrentUser();
     if (currentUser && currentUser.id === userId) {
       const updatedUser = { ...currentUser, ...updates };
       this.saveCurrentUser(updatedUser);
+      console.log('Current user updated:', updatedUser);
       return updatedUser;
     }
 
