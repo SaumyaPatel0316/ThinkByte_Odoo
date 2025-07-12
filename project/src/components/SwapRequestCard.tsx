@@ -101,17 +101,23 @@ export function SwapRequestCard({
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-center space-x-4">
             <div className="text-center">
-              <div className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
-                {request.offeredSkill}
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                request.offeredSkill === 'Learning Request' 
+                  ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-400'
+                  : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400'
+              }`}>
+                {request.offeredSkill === 'Learning Request' ? 'Learning Request' : request.offeredSkill}
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Offered</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                {request.offeredSkill === 'Learning Request' ? 'Type' : 'Offered'}
+              </p>
             </div>
             <ArrowRightIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             <div className="text-center">
               <div className="bg-teal-100 dark:bg-teal-900/20 text-teal-800 dark:text-teal-400 px-3 py-1 rounded-full text-sm font-medium">
                 {request.requestedSkill}
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Requested</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Wants to Learn</p>
             </div>
           </div>
         </div>

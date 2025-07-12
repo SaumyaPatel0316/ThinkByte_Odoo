@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
+import { Chatbot } from './components/Chatbot';
 import { Header } from './components/Header';
+import { MessageNotificationListener } from './components/MessageNotificationListener';
+import { SplashScreen } from './components/SplashScreen';
 import { Dashboard } from './pages/Dashboard';
 import { Browse } from './pages/Browse';
 import { Profile } from './pages/Profile';
@@ -46,11 +49,24 @@ function AuthenticatedApp() {
         </Routes>
       </main>
       <ToastContainer notifications={notifications} onDismiss={dismissToast} />
+      <MessageNotificationListener />
+      <Chatbot />
     </div>
   );
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
   return (
     <ThemeProvider>
       <AuthProvider>

@@ -46,10 +46,11 @@ export function Profile() {
   };
 
   const addSkillOffered = () => {
-    if (newSkillOffered.trim() && !formData.skillsOffered.includes(newSkillOffered.trim())) {
+    const normalizedSkill = newSkillOffered.trim();
+    if (normalizedSkill && !formData.skillsOffered.some(skill => skill.toLowerCase() === normalizedSkill.toLowerCase())) {
       setFormData(prev => ({
         ...prev,
-        skillsOffered: [...prev.skillsOffered, newSkillOffered.trim()]
+        skillsOffered: [...prev.skillsOffered, normalizedSkill]
       }));
       setNewSkillOffered('');
     }
@@ -63,10 +64,11 @@ export function Profile() {
   };
 
   const addSkillWanted = () => {
-    if (newSkillWanted.trim() && !formData.skillsWanted.includes(newSkillWanted.trim())) {
+    const normalizedSkill = newSkillWanted.trim();
+    if (normalizedSkill && !formData.skillsWanted.some(skill => skill.toLowerCase() === normalizedSkill.toLowerCase())) {
       setFormData(prev => ({
         ...prev,
-        skillsWanted: [...prev.skillsWanted, newSkillWanted.trim()]
+        skillsWanted: [...prev.skillsWanted, normalizedSkill]
       }));
       setNewSkillWanted('');
     }
@@ -80,10 +82,11 @@ export function Profile() {
   };
 
   const addAvailability = () => {
-    if (newAvailability.trim() && !formData.availability.includes(newAvailability.trim())) {
+    const normalizedAvailability = newAvailability.trim();
+    if (normalizedAvailability && !formData.availability.some(avail => avail.toLowerCase() === normalizedAvailability.toLowerCase())) {
       setFormData(prev => ({
         ...prev,
-        availability: [...prev.availability, newAvailability.trim()]
+        availability: [...prev.availability, normalizedAvailability]
       }));
       setNewAvailability('');
     }
@@ -152,15 +155,33 @@ export function Profile() {
                   <UserIcon className="h-12 w-12 text-gray-500 dark:text-gray-400" />
                 </div>
               )}
-              
               {isEditing && (
-                <input
-                  type="url"
-                  placeholder="Profile photo URL"
-                  value={formData.profilePhoto}
-                  onChange={(e) => setFormData(prev => ({ ...prev, profilePhoto: e.target.value }))}
-                  className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+                <>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setFormData(prev => ({ ...prev, profilePhoto: reader.result as string }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-800"
+                  />
+                  {formData.profilePhoto && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, profilePhoto: '' }))}
+                      className="mt-2 text-red-600 hover:text-red-800 text-xs underline"
+                    >
+                      Remove photo
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

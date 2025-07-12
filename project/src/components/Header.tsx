@@ -3,9 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { NotificationDropdown } from './NotificationDropdown';
 import { ThemeToggle } from './ThemeToggle';
-import { 
-  UserIcon, 
-  Cog6ToothIcon, 
+import { MessageNotificationBadge } from './MessageNotificationBadge';
+import {
+  UserIcon,
+  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
@@ -18,6 +19,7 @@ export function Header() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
 
   const navigation = [
     { name: 'Browse Skills', href: '/browse' },
@@ -43,10 +45,22 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SS</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">SkillSwap</span>
+              
+                <img 
+                  src="/public/ThinkByte_Logo.png" 
+                  alt="ThinkByte Logo" 
+                  className="h-8 w-auto object-contain text-sm rounded-lg"
+                />
+              
+                <div className="flex items-center space-x-2">
+                  {/* <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  
+                  </div> */}
+                  <span className="text-xl font-bold text-blue-900 dark:text-blue-900">
+                    ThinkByte
+                  </span>
+                </div>
+              
             </Link>
           </div>
 
@@ -72,13 +86,14 @@ export function Header() {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
                   location.pathname === item.href
                     ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400'
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 {item.name}
+                {item.name === 'Messages' && <MessageNotificationBadge />}
               </Link>
             ))}
             
@@ -161,13 +176,14 @@ export function Header() {
                     key={item.name}
                     to={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    className={`block px-3 py-2 rounded-md text-base font-medium relative ${
                       location.pathname === item.href
                         ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     {item.name}
+                    {item.name === 'Messages' && <MessageNotificationBadge />}
                   </Link>
                 ))}
               </div>

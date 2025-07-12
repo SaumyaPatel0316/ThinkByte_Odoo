@@ -46,6 +46,7 @@ export interface Message {
   content: string;
   type: 'text' | 'swap_request' | 'system';
   isRead: boolean;
+  status: 'sending' | 'sent' | 'delivered' | 'read';
   createdAt: Date;
 }
 

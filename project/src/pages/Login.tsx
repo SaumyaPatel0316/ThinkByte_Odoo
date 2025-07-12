@@ -43,11 +43,15 @@ export function Login() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">SS</span>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <img
+              src="/public/ThinkByte_Logo.png"
+              alt="ThinkByte Logo"
+              className="h-12 w-12 rounded-lg object-contain"
+            />
+            <span className="text-3xl font-bold text-blue-900 dark:text-blue-200">ThinkByte</span>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
-          <p className="mt-2 text-gray-600">Sign in to your SkillSwap account</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Sign in to your Skill Swap account</p>
         </div>
 
         {/* Demo Users */}

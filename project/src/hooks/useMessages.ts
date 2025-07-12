@@ -1,110 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Message, Conversation, User } from '../types';
-
-// Mock data
-const mockUsers: User[] = [
-  {
-    id: '2',
-    name: 'Sarah Chen',
-    email: 'sarah@example.com',
-    profilePhoto: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    isPublic: true,
-    skillsOffered: ['Python', 'Data Science'],
-    skillsWanted: ['React'],
-    availability: ['Weekends'],
-    rating: 4.9,
-    totalSwaps: 8,
-    joinedAt: new Date(),
-  },
-  {
-    id: '3',
-    name: 'Mike Rodriguez',
-    email: 'mike@example.com',
-    profilePhoto: 'https://images.pexels.com/photos/1674752/pexels-photo-1674752.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    isPublic: true,
-    skillsOffered: ['Digital Marketing'],
-    skillsWanted: ['Web Development'],
-    availability: ['Flexible'],
-    rating: 4.7,
-    totalSwaps: 15,
-    joinedAt: new Date(),
-    isAdmin: true,
-  },
-];
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    participants: ['1', '2'],
-    lastMessage: {
-      id: '1',
-      conversationId: '1',
-      senderId: '2',
-      receiverId: '1',
-      content: 'Hi! I\'d love to learn React from you in exchange for Python tutoring.',
-      type: 'text',
-      isRead: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    },
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: '2',
-    participants: ['1', '3'],
-    lastMessage: {
-      id: '2',
-      conversationId: '2',
-      senderId: '1',
-      receiverId: '3',
-      content: 'Thanks for accepting my swap request!',
-      type: 'text',
-      isRead: true,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    },
-    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-  },
-];
-
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    conversationId: '1',
-    senderId: '2',
-    receiverId: '1',
-    content: 'Hi! I\'d love to learn React from you in exchange for Python tutoring.',
-    type: 'text',
-    isRead: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: '2',
-    conversationId: '2',
-    senderId: '1',
-    receiverId: '3',
-    content: 'Thanks for accepting my swap request!',
-    type: 'text',
-    isRead: true,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-  },
-  {
-    id: '3',
-    conversationId: '2',
-    senderId: '3',
-    receiverId: '1',
-    content: 'You\'re welcome! Looking forward to our session.',
-    type: 'text',
-    isRead: true,
-    createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000),
-  },
-];
+import { localStorageService } from '../services/localStorageService';
+import { notificationService } from '../services/notificationService';
 
 export function useMessages(userId?: string) {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Load conversations and messages from localStorage on mount
+  useEffect(() => {
+    if (userId) {
+      const storedConversations = localStorageService.getAllConversations();
+      const userConversations = storedConversations.filter((conv: any) => 
+        conv.participants.includes(userId)
+      );
+      
+      // Convert stored conversations to proper format
+      const formattedConversations: Conversation[] = userConversations.map((conv: any) => ({
+        id: conv.id,
+        participants: conv.participants,
+        lastMessage: conv.lastMessage ? {
+          ...conv.lastMessage,
+          createdAt: new Date(conv.lastMessage.createdAt),
+        } : undefined,
+        updatedAt: new Date(conv.updatedAt),
+      }));
+      
+      setConversations(formattedConversations);
+
+      // Load all messages for user's conversations
+      const allMessages: Message[] = [];
+      formattedConversations.forEach(conv => {
+        const convMessages = localStorageService.getConversationMessages(conv.id);
+        convMessages.forEach((msg: any) => {
+          allMessages.push({
+            ...msg,
+            createdAt: new Date(msg.createdAt),
+          });
+        });
+      });
+      setMessages(allMessages);
+    }
+  }, [userId]);
+
   const getUserById = (id: string): User | undefined => {
-    return mockUsers.find(user => user.id === id);
+    return localStorageService.getUserById(id) || undefined;
   };
 
   const getConversationMessages = (conversationId: string): Message[] => {
@@ -115,8 +56,8 @@ export function useMessages(userId?: string) {
     if (!userId) return;
 
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
 
+    // Create message with initial 'sending' status
     const newMessage: Message = {
       id: Date.now().toString(),
       conversationId,
@@ -125,27 +66,57 @@ export function useMessages(userId?: string) {
       content,
       type: 'text',
       isRead: false,
+      status: 'sending',
       createdAt: new Date(),
     };
 
+    // Add to local state immediately
     setMessages(prev => [...prev, newMessage]);
     
+    // Save to localStorage
+    localStorageService.saveMessage(newMessage);
+    
     // Update conversation's last message
+    const updatedConversation = {
+      ...newMessage,
+      status: 'sent',
+    };
+    localStorageService.updateConversationLastMessage(conversationId, updatedConversation);
+    
     setConversations(prev => 
       prev.map(conv => 
         conv.id === conversationId 
-          ? { ...conv, lastMessage: newMessage, updatedAt: new Date() }
+          ? { ...conv, lastMessage: updatedConversation, updatedAt: new Date() }
           : conv
       )
     );
 
+    // Simulate message delivery process
+    setTimeout(() => {
+      updateMessageStatus(newMessage.id, 'sent');
+    }, 1000);
+
+    setTimeout(() => {
+      updateMessageStatus(newMessage.id, 'delivered');
+    }, 2000);
+
     setLoading(false);
   };
 
-  const markAsRead = async (messageId: string) => {
+  const updateMessageStatus = (messageId: string, status: 'sent' | 'delivered' | 'read') => {
+    localStorageService.updateMessageStatus(messageId, status);
     setMessages(prev => 
       prev.map(msg => 
-        msg.id === messageId ? { ...msg, isRead: true } : msg
+        msg.id === messageId ? { ...msg, status } : msg
+      )
+    );
+  };
+
+  const markAsRead = async (messageId: string) => {
+    localStorageService.updateMessageStatus(messageId, 'read');
+    setMessages(prev => 
+      prev.map(msg => 
+        msg.id === messageId ? { ...msg, isRead: true, status: 'read' } : msg
       )
     );
   };
@@ -167,8 +138,49 @@ export function useMessages(userId?: string) {
       updatedAt: new Date(),
     };
 
+    // Save to localStorage
+    localStorageService.createConversation(newConversation);
     setConversations(prev => [...prev, newConversation]);
+    
     return newConversation.id;
+  };
+
+  // Simulate receiving a message (for demo purposes)
+  const simulateIncomingMessage = (conversationId: string, senderId: string, content: string) => {
+    const sender = getUserById(senderId);
+    if (!sender) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      conversationId,
+      senderId,
+      receiverId: userId!,
+      content,
+      type: 'text',
+      isRead: false,
+      status: 'delivered',
+      createdAt: new Date(),
+    };
+
+    // Add to local state
+    setMessages(prev => [...prev, newMessage]);
+    
+    // Save to localStorage
+    localStorageService.saveMessage(newMessage);
+    
+    // Update conversation's last message
+    localStorageService.updateConversationLastMessage(conversationId, newMessage);
+    
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, lastMessage: newMessage, updatedAt: new Date() }
+          : conv
+      )
+    );
+
+    // Show notification
+    notificationService.showConversationNotification(conversationId, sender, content);
   };
 
   return {
@@ -180,5 +192,7 @@ export function useMessages(userId?: string) {
     sendMessage,
     markAsRead,
     createConversation,
+    updateMessageStatus,
+    simulateIncomingMessage,
   };
 }

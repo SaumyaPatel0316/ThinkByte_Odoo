@@ -5,6 +5,8 @@ const USERS_KEY = 'skillswap_users';
 const CURRENT_USER_KEY = 'skillswap_current_user';
 const NOTIFICATIONS_KEY = 'skillswap_notifications';
 const SWAP_REQUESTS_KEY = 'skillswap_swap_requests';
+const CONVERSATIONS_KEY = 'skillswap_conversations';
+const MESSAGES_KEY = 'skillswap_messages';
 
 // User interface with password
 interface UserWithPassword extends User {
@@ -91,6 +93,12 @@ class LocalStorageService {
     // Return user without password
     const { password, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
+  }
+
+  // Initialize demo data
+  initializeDemoData(): void {
+    this.initializeDemoUsers();
+    this.initializeDemoConversations();
   }
 
   // Login user
@@ -399,6 +407,144 @@ class LocalStorageService {
     const requests = this.getSwapRequests();
     const filteredRequests = requests.filter(req => req.id !== requestId);
     this.saveSwapRequests(filteredRequests);
+  }
+
+  // Message and Conversation methods
+  private getConversations(): any[] {
+    const conversations = localStorage.getItem(CONVERSATIONS_KEY);
+    return conversations ? JSON.parse(conversations) : [];
+  }
+
+  private saveConversations(conversations: any[]): void {
+    localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  }
+
+  private getMessages(): any[] {
+    const messages = localStorage.getItem(MESSAGES_KEY);
+    return messages ? JSON.parse(messages) : [];
+  }
+
+  private saveMessages(messages: any[]): void {
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+  }
+
+  getAllConversations(): any[] {
+    return this.getConversations();
+  }
+
+  getConversationMessages(conversationId: string): any[] {
+    const messages = this.getMessages();
+    return messages.filter(msg => msg.conversationId === conversationId);
+  }
+
+  createConversation(conversation: any): any {
+    const conversations = this.getConversations();
+    conversations.push(conversation);
+    this.saveConversations(conversations);
+    return conversation;
+  }
+
+  saveMessage(message: any): any {
+    const messages = this.getMessages();
+    messages.push(message);
+    this.saveMessages(messages);
+    return message;
+  }
+
+  updateMessageStatus(messageId: string, status: string): void {
+    const messages = this.getMessages();
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex !== -1) {
+      messages[messageIndex].status = status;
+      this.saveMessages(messages);
+    }
+  }
+
+  updateConversationLastMessage(conversationId: string, lastMessage: any): void {
+    const conversations = this.getConversations();
+    const conversationIndex = conversations.findIndex(conv => conv.id === conversationId);
+    if (conversationIndex !== -1) {
+      conversations[conversationIndex].lastMessage = lastMessage;
+      conversations[conversationIndex].updatedAt = new Date();
+      this.saveConversations(conversations);
+    }
+  }
+
+  // Initialize demo conversations and messages
+  initializeDemoConversations(): void {
+    const conversations = this.getConversations();
+    const messages = this.getMessages();
+    
+    if (conversations.length === 0) {
+      // Create demo conversations
+      const demoConversations = [
+        {
+          id: '1',
+          participants: ['1', '2'],
+          updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        },
+        {
+          id: '2',
+          participants: ['1', '3'],
+          updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        }
+      ];
+
+      const demoMessages = [
+        {
+          id: '1',
+          conversationId: '1',
+          senderId: '2',
+          receiverId: '1',
+          content: 'Hi! I\'d love to learn React from you in exchange for Python tutoring.',
+          type: 'text',
+          isRead: false,
+          status: 'delivered',
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        },
+        {
+          id: '2',
+          conversationId: '1',
+          senderId: '1',
+          receiverId: '2',
+          content: 'That sounds great! I\'m available on weekends. When would you like to start?',
+          type: 'text',
+          isRead: true,
+          status: 'read',
+          createdAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
+        },
+        {
+          id: '3',
+          conversationId: '2',
+          senderId: '1',
+          receiverId: '3',
+          content: 'Thanks for accepting my swap request!',
+          type: 'text',
+          isRead: true,
+          status: 'read',
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+        {
+          id: '4',
+          conversationId: '2',
+          senderId: '3',
+          receiverId: '1',
+          content: 'You\'re welcome! Looking forward to our session.',
+          type: 'text',
+          isRead: true,
+          status: 'read',
+          createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000),
+        }
+      ];
+
+      // Update last messages for conversations
+      demoConversations[0].lastMessage = demoMessages[1];
+      demoConversations[1].lastMessage = demoMessages[3];
+
+      // Save to localStorage
+      this.saveConversations(demoConversations);
+      this.saveMessages(demoMessages);
+    }
   }
 }
 

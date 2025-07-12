@@ -67,11 +67,11 @@ export function SwapRequestModal({ isOpen, onClose, targetUser }: SwapRequestMod
   };
 
   const availableSkillsOffered = user.skillsOffered.filter(skill => 
-    targetUser.skillsWanted.includes(skill)
+    targetUser.skillsWanted.some(wantedSkill => wantedSkill.toLowerCase() === skill.toLowerCase())
   );
 
   const availableSkillsWanted = targetUser.skillsOffered.filter(skill => 
-    user.skillsWanted.includes(skill)
+    user.skillsWanted.some(wantedSkill => wantedSkill.toLowerCase() === skill.toLowerCase())
   );
 
   // If no matching skills, show all skills as options
