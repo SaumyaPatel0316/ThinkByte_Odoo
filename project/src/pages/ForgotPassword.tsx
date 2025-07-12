@@ -5,21 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSpring, animated } from 'react-spring';
 import { gsap } from 'gsap';
 import { 
-  EyeIcon, 
-  EyeSlashIcon,
-  UserIcon,
-  LockClosedIcon
+  EnvelopeIcon,
+  ArrowLeftIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { localStorageService } from '../services/localStorageService';
+import { EmailService } from '../services/emailService';
 
-export function Login() {
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
+export function ForgotPassword() {
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   
   // Refs for GSAP animations
   const logoRef = useRef(null);
@@ -48,12 +45,7 @@ export function Login() {
 
   // React Spring for form field animations
   const emailSpring = useSpring({
-    transform: formData.email ? 'scale(1.02)' : 'scale(1)',
-    config: { tension: 300, friction: 20 }
-  });
-
-  const passwordSpring = useSpring({
-    transform: formData.password ? 'scale(1.02)' : 'scale(1)',
+    transform: email ? 'scale(1.02)' : 'scale(1)',
     config: { tension: 300, friction: 20 }
   });
 
@@ -63,13 +55,116 @@ export function Login() {
     setError('');
 
     try {
-      await login(formData.email, formData.password);
-    } catch {
-      setError('Invalid email or password');
+      // Check if user exists using localStorageService
+      if (!localStorageService.userExists(email)) {
+        throw new Error('No account found with this email address');
+      }
+
+      // Send password reset email
+      const emailSent = await EmailService.sendPasswordResetEmail(email);
+      
+      if (!emailSent) {
+        throw new Error('Failed to send reset email. Please try again.');
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to send reset email. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const handleResetPassword = async (newPassword: string) => {
+    try {
+      return localStorageService.resetUserPassword(email, newPassword);
+    } catch (error) {
+      return false;
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Animated background elements */}
+        <motion.div
+          className="absolute inset-0 opacity-10"
+          animate={{
+            background: [
+              "radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+              "radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 50%)",
+              "radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)"
+            ]
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <motion.div
+          ref={formRef}
+          className="max-w-md w-full space-y-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden"
+          initial={{ opacity: 0, y: 50, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          {/* Success Icon */}
+          <motion.div
+            className="flex justify-center"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+          >
+            <CheckCircleIcon className="h-16 w-16 text-green-500" />
+          </motion.div>
+
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Check Your Email
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              We've sent a password reset link to <strong>{email}</strong>
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-8">
+              Click the link in the email to reset your password. If you don't see the email, check your spam folder.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <motion.button
+              onClick={() => setSuccess(false)}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Try a different email
+            </motion.button>
+
+            <motion.div className="text-center">
+              <Link
+                to="/login"
+                className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+              >
+                Back to login
+              </Link>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -86,7 +181,7 @@ export function Login() {
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       
-      <div className="max-w-md w-full space-y-8 relative z-10">
+      <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <motion.div 
           ref={headerRef}
@@ -128,12 +223,12 @@ export function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Sign in to your Skill Swap account
+            Reset your password
           </motion.p>
         </motion.div>
 
-        {/* Login Form */}
-        <motion.form 
+        {/* Forgot Password Form */}
+        <motion.form
           ref={formRef}
           className="mt-8 space-y-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden"
           onSubmit={handleSubmit}
@@ -162,7 +257,7 @@ export function Login() {
             )}
           </AnimatePresence>
 
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -175,108 +270,26 @@ export function Login() {
                 className="relative"
                 style={emailSpring}
               >
-                <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <motion.input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm shadow-inner"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email address"
                   whileFocus={{ 
                     scale: 1.02,
                     boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)"
                   }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 />
-              </animated.div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Password
-              </label>
-              <animated.div 
-                className="relative"
-                style={passwordSpring}
-              >
-                <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <motion.input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm shadow-inner"
-                  placeholder="Enter your password"
-                  whileFocus={{ 
-                    scale: 1.02,
-                    boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)"
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                />
-                <motion.button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </motion.button>
               </animated.div>
             </motion.div>
           </div>
-
-          <motion.div 
-            className="flex items-center justify-between relative z-10"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            <div className="flex items-center">
-              <motion.input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                whileHover={{ scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <Link 
-                to="/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                <motion.span
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  Forgot your password?
-                </motion.span>
-              </Link>
-            </div>
-          </motion.div>
 
           <motion.button
             type="submit"
@@ -305,16 +318,16 @@ export function Login() {
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
-                  Signing in...
+                  Sending reset email...
                 </motion.div>
               ) : (
                 <motion.span
-                  key="signin"
+                  key="send"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  Sign in
+                  Send reset email
                 </motion.span>
               )}
             </AnimatePresence>
@@ -326,26 +339,16 @@ export function Login() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Don't have an account?{' '}
-              <motion.div className="inline-block">
-                <Link 
-                  to="/register" 
-                  className="font-medium text-blue-600 hover:text-blue-500"
-                >
-                  <motion.span
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
-                    Sign up
-                  </motion.span>
-                </Link>
-              </motion.div>
-            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-500 font-medium"
+            >
+              <ArrowLeftIcon className="h-4 w-4 mr-1" />
+              Back to login
+            </Link>
           </motion.div>
         </motion.form>
       </div>
     </div>
   );
-}
+} 

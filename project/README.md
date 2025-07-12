@@ -5,7 +5,7 @@ A modern web application for connecting people who want to exchange skills, feat
 ## 🚀 Features
 
 ### Core Features
-- **User Authentication**: Secure registration and login system
+- **User Authentication**: Secure registration and login system with password reset functionality
 - **Profile Management**: Complete user profiles with skills, availability, and ratings
 - **Skill Browsing**: Discover users with compatible skills
 - **Swap Requests**: Send and manage skill exchange requests
@@ -104,6 +104,14 @@ The backend will be available at `http://localhost:3000`
 4. **Send Requests**: Request skill exchanges with other users
 5. **Chat**: Use the messaging system to coordinate
 6. **Rate**: Provide feedback after completed swaps
+
+### Password Reset Flow
+
+1. **Forgot Password**: Click "Forgot your password?" on the login page
+2. **Enter Email**: Provide your registered email address
+3. **Receive Email**: Get a password reset link (simulated in demo)
+4. **Reset Password**: Set a new password and confirm it
+5. **Login**: Use your new password to log in
 
 ### Demo Accounts
 

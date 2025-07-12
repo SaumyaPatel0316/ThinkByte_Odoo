@@ -163,6 +163,33 @@ class LocalStorageService {
     return userWithoutPassword;
   }
 
+  // Get user by email (for password reset)
+  getUserByEmail(email: string): UserWithPassword | null {
+    const users = this.getUsers();
+    const user = users.find(u => u.email === email);
+    return user || null;
+  }
+
+  // Reset user password
+  resetUserPassword(email: string, newPassword: string): boolean {
+    const users = this.getUsers();
+    const userIndex = users.findIndex(u => u.email === email);
+    
+    if (userIndex === -1) {
+      return false;
+    }
+
+    users[userIndex].password = newPassword;
+    this.saveUsers(users);
+    return true;
+  }
+
+  // Check if user exists by email
+  userExists(email: string): boolean {
+    const users = this.getUsers();
+    return users.some(u => u.email === email);
+  }
+
   // Check if user has completed profile
   isProfileComplete(user: User): boolean {
     return !!(
