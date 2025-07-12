@@ -1,3 +1,8 @@
+# Admin Credentials
+admin mail : mike@example.com
+password: demo
+
+
 # SkillSwap - AI-Powered Skill Exchange Platform
 
 A modern web application for connecting people who want to exchange skills, featuring AI-powered assistance and a comprehensive user experience.
