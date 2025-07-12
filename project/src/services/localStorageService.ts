@@ -1,0 +1,259 @@
+import { User } from '../types';
+
+// Local storage keys
+const USERS_KEY = 'skillswap_users';
+const CURRENT_USER_KEY = 'skillswap_current_user';
+const NOTIFICATIONS_KEY = 'skillswap_notifications';
+
+// User interface with password
+interface UserWithPassword extends User {
+  password: string;
+}
+
+// Notification interface
+interface LocalNotification {
+  id: string;
+  userId: string;
+  type: 'profile_setup' | 'swap_request' | 'swap_accepted' | 'swap_rejected' | 'message' | 'system';
+  title: string;
+  message: string;
+  isRead: boolean;
+  actionUrl?: string;
+  createdAt: Date;
+}
+
+class LocalStorageService {
+  // Get all users from localStorage
+  private getUsers(): UserWithPassword[] {
+    const users = localStorage.getItem(USERS_KEY);
+    return users ? JSON.parse(users) : [];
+  }
+
+  // Save all users to localStorage
+  private saveUsers(users: UserWithPassword[]): void {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+
+  // Get current user from localStorage
+  getCurrentUser(): User | null {
+    const user = localStorage.getItem(CURRENT_USER_KEY);
+    return user ? JSON.parse(user) : null;
+  }
+
+  // Save current user to localStorage
+  private saveCurrentUser(user: User | null): void {
+    if (user) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(CURRENT_USER_KEY);
+    }
+  }
+
+  // Register a new user
+  registerUser(userData: { name: string; email: string; password: string; location?: string }): User {
+    const users = this.getUsers();
+    
+    // Check if user already exists
+    if (users.find(u => u.email === userData.email)) {
+      throw new Error('User with this email already exists');
+    }
+
+    const newUser: UserWithPassword = {
+      id: Date.now().toString(),
+      name: userData.name,
+      email: userData.email,
+      password: userData.password, // In a real app, this would be hashed
+      location: userData.location,
+      profilePhoto: '',
+      isPublic: true,
+      skillsOffered: [],
+      skillsWanted: [],
+      availability: [],
+      rating: 0,
+      totalSwaps: 0,
+      joinedAt: new Date(),
+    };
+
+    users.push(newUser);
+    this.saveUsers(users);
+
+    // Create profile setup notification
+    this.createNotification({
+      userId: newUser.id,
+      type: 'profile_setup',
+      title: 'Welcome to SkillSwap!',
+      message: 'Complete your profile to start connecting with other users and sharing your skills.',
+      actionUrl: '/profile'
+    });
+
+    // Return user without password
+    const { password, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
+  }
+
+  // Login user
+  loginUser(email: string, password: string): User {
+    const users = this.getUsers();
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (!user) {
+      throw new Error('Invalid email or password');
+    }
+
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+    this.saveCurrentUser(userWithoutPassword);
+    return userWithoutPassword;
+  }
+
+  // Logout user
+  logoutUser(): void {
+    this.saveCurrentUser(null);
+  }
+
+  // Update user profile
+  updateUserProfile(userId: string, updates: Partial<User>): User {
+    const users = this.getUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    
+    if (userIndex === -1) {
+      throw new Error('User not found');
+    }
+
+    // Update user
+    users[userIndex] = { ...users[userIndex], ...updates };
+    this.saveUsers(users);
+
+    // Update current user if it's the same user
+    const currentUser = this.getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      const updatedUser = { ...currentUser, ...updates };
+      this.saveCurrentUser(updatedUser);
+      return updatedUser;
+    }
+
+    // Return user without password
+    const { password, ...userWithoutPassword } = users[userIndex];
+    return userWithoutPassword;
+  }
+
+  // Get all users (for browsing)
+  getAllUsers(): User[] {
+    const users = this.getUsers();
+    return users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
+  }
+
+  // Get user by ID
+  getUserById(userId: string): User | null {
+    const users = this.getUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user) return null;
+    
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  // Check if user has completed profile
+  isProfileComplete(user: User): boolean {
+    return !!(
+      user.name &&
+      user.location &&
+      user.skillsOffered.length > 0 &&
+      user.skillsWanted.length > 0 &&
+      user.availability.length > 0
+    );
+  }
+
+  // Notification methods
+  private getNotifications(): LocalNotification[] {
+    const notifications = localStorage.getItem(NOTIFICATIONS_KEY);
+    return notifications ? JSON.parse(notifications) : [];
+  }
+
+  private saveNotifications(notifications: LocalNotification[]): void {
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+  }
+
+  createNotification(notification: Omit<LocalNotification, 'id' | 'createdAt'>): void {
+    const notifications = this.getNotifications();
+    const newNotification: LocalNotification = {
+      ...notification,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+    };
+    notifications.push(newNotification);
+    this.saveNotifications(notifications);
+  }
+
+  getNotificationsForUser(userId: string): LocalNotification[] {
+    const notifications = this.getNotifications();
+    return notifications.filter(n => n.userId === userId);
+  }
+
+  markNotificationAsRead(notificationId: string): void {
+    const notifications = this.getNotifications();
+    const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+    if (notificationIndex !== -1) {
+      notifications[notificationIndex].isRead = true;
+      this.saveNotifications(notifications);
+    }
+  }
+
+  // Initialize with demo users if no users exist
+  initializeDemoUsers(): void {
+    const users = this.getUsers();
+    if (users.length === 0) {
+      const demoUsers: UserWithPassword[] = [
+        {
+          id: '1',
+          name: 'Alex Johnson',
+          email: 'alex@example.com',
+          password: 'demo',
+          location: 'San Francisco, CA',
+          profilePhoto: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['React', 'TypeScript', 'UI/UX Design'],
+          skillsWanted: ['Python', 'Machine Learning', 'Photography'],
+          availability: ['Weekends', 'Evenings'],
+          rating: 4.8,
+          totalSwaps: 12,
+          joinedAt: new Date('2024-01-15'),
+        },
+        {
+          id: '2',
+          name: 'Sarah Chen',
+          email: 'sarah@example.com',
+          password: 'demo',
+          location: 'New York, NY',
+          profilePhoto: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Python', 'Data Science', 'Photography'],
+          skillsWanted: ['React', 'Figma', 'Content Writing'],
+          availability: ['Weekday evenings', 'Saturday mornings'],
+          rating: 4.9,
+          totalSwaps: 8,
+          joinedAt: new Date('2024-02-20'),
+        },
+        {
+          id: '3',
+          name: 'Mike Rodriguez',
+          email: 'mike@example.com',
+          password: 'demo',
+          location: 'Austin, TX',
+          profilePhoto: 'https://images.pexels.com/photos/1674752/pexels-photo-1674752.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Digital Marketing', 'SEO', 'Content Writing'],
+          skillsWanted: ['Web Development', 'Graphic Design'],
+          availability: ['Flexible schedule'],
+          rating: 4.7,
+          totalSwaps: 15,
+          joinedAt: new Date('2023-11-10'),
+          isAdmin: true,
+        },
+      ];
+      this.saveUsers(demoUsers);
+    }
+  }
+}
+
+export const localStorageService = new LocalStorageService(); 
