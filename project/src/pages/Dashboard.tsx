@@ -73,10 +73,10 @@ export function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Welcome Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Welcome back, {user?.name}!
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
           Here's what's happening with your skill swaps
         </p>
       </div>
@@ -140,7 +140,7 @@ export function Dashboard() {
       {/* Pending Requests */}
       {pendingRequests.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Pending Requests ({pendingRequests.length})
           </h2>
           <div className="space-y-4">
@@ -163,7 +163,7 @@ export function Dashboard() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h2>
           <Link
             to="/swaps"
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
           >
             View all
           </Link>

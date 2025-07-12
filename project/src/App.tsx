@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider, useToast } from './context/ToastContext';
+import { ToastContainer } from './components/ToastContainer';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { Browse } from './pages/Browse';
@@ -14,6 +16,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 
 function AuthenticatedApp() {
   const { user } = useAuth();
+  const { notifications, dismissToast } = useToast();
 
   if (!user) {
     return (
@@ -42,6 +45,7 @@ function AuthenticatedApp() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <ToastContainer notifications={notifications} onDismiss={dismissToast} />
     </div>
   );
 }
@@ -50,9 +54,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
+        <ToastProvider>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

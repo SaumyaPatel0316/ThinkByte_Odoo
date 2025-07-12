@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSwapRequests } from '../hooks/useSwapRequests';
 import { SwapRequestCard } from '../components/SwapRequestCard';
@@ -11,6 +12,7 @@ import {
 
 export function SwapRequests() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { swapRequests, updateSwapRequest, deleteSwapRequest } = useSwapRequests(user?.id);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'accepted' | 'completed'>('all');
 
@@ -125,7 +127,7 @@ export function SwapRequests() {
           </p>
           {activeTab === 'all' && (
             <button
-              onClick={() => window.location.href = '/browse'}
+              onClick={() => navigate('/browse')}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Browse Skills

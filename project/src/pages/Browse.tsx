@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { SkillCard } from '../components/SkillCard';
+import { SwapRequestModal } from '../components/SwapRequestModal';
 import { User } from '../types';
 import { localStorageService } from '../services/localStorageService';
 import { 
@@ -17,6 +18,8 @@ export function Browse() {
   const [locationFilter, setLocationFilter] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showSwapModal, setShowSwapModal] = useState(false);
 
   // Load users from localStorage
   useEffect(() => {
@@ -64,16 +67,16 @@ export function Browse() {
   }, [users, searchQuery, locationFilter, availabilityFilter, user?.id]);
 
   const handleSendRequest = (targetUser: User) => {
-    // Open modal or navigate to request form
-    console.log('Send request to:', targetUser.name);
+    setSelectedUser(targetUser);
+    setShowSwapModal(true);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Browse Skills</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Browse Skills</h1>
+        <p className="text-gray-600 dark:text-gray-400">
           Discover talented people and find the perfect skill swap
         </p>
       </div>
@@ -158,25 +161,55 @@ export function Browse() {
             />
           ))}
         </div>
-              ) : (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <MagnifyingGlassIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No results found</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Try adjusting your search criteria or filters
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setLocationFilter('');
-                setAvailabilityFilter('');
-              }}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-            >
-              Clear all filters
-            </button>
-          </div>
-        )}
+      ) : users.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <MagnifyingGlassIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No users found</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            There are no users available to browse. Try registering some demo accounts first.
+          </p>
+          <button
+            onClick={() => {
+              localStorageService.initializeDemoUsers();
+              const allUsers = localStorageService.getAllUsers();
+              setUsers(allUsers);
+            }}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Load Demo Users
+          </button>
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <MagnifyingGlassIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No results found</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Try adjusting your search criteria or filters
+          </p>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setLocationFilter('');
+              setAvailabilityFilter('');
+            }}
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+          >
+            Clear all filters
+          </button>
+        </div>
+      )}
+      
+      {/* Swap Request Modal */}
+      {selectedUser && (
+        <SwapRequestModal
+          isOpen={showSwapModal}
+          onClose={() => {
+            setShowSwapModal(false);
+            setSelectedUser(null);
+          }}
+          targetUser={selectedUser}
+        />
+      )}
     </div>
   );
 }

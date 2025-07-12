@@ -4,6 +4,7 @@ import { User } from '../types';
 const USERS_KEY = 'skillswap_users';
 const CURRENT_USER_KEY = 'skillswap_current_user';
 const NOTIFICATIONS_KEY = 'skillswap_notifications';
+const SWAP_REQUESTS_KEY = 'skillswap_swap_requests';
 
 // User interface with password
 interface UserWithPassword extends User {
@@ -83,7 +84,8 @@ class LocalStorageService {
       type: 'profile_setup',
       title: 'Welcome to SkillSwap!',
       message: 'Complete your profile to start connecting with other users and sharing your skills.',
-      actionUrl: '/profile'
+      actionUrl: '/profile',
+      isRead: false
     });
 
     // Return user without password
@@ -250,9 +252,153 @@ class LocalStorageService {
           joinedAt: new Date('2023-11-10'),
           isAdmin: true,
         },
+        {
+          id: '4',
+          name: 'Emma Wilson',
+          email: 'emma@example.com',
+          password: 'demo',
+          location: 'Seattle, WA',
+          profilePhoto: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Graphic Design', 'Illustration', 'Branding'],
+          skillsWanted: ['Web Development', 'Digital Marketing', 'Photography'],
+          availability: ['Weekends', 'Weekday evenings'],
+          rating: 4.6,
+          totalSwaps: 6,
+          joinedAt: new Date('2024-03-05'),
+        },
+        {
+          id: '5',
+          name: 'David Kim',
+          email: 'david@example.com',
+          password: 'demo',
+          location: 'Los Angeles, CA',
+          profilePhoto: 'https://images.pexels.com/photos/927022/pexels-photo-927022.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Machine Learning', 'Python', 'Data Analysis'],
+          skillsWanted: ['UI/UX Design', 'Mobile Development', 'Music Production'],
+          availability: ['Flexible schedule'],
+          rating: 4.9,
+          totalSwaps: 18,
+          joinedAt: new Date('2023-09-12'),
+        },
+        {
+          id: '6',
+          name: 'Lisa Thompson',
+          email: 'lisa@example.com',
+          password: 'demo',
+          location: 'Chicago, IL',
+          profilePhoto: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Content Writing', 'Copywriting', 'Social Media Management'],
+          skillsWanted: ['Graphic Design', 'Video Editing', 'Public Speaking'],
+          availability: ['Weekday afternoons', 'Saturday mornings'],
+          rating: 4.5,
+          totalSwaps: 9,
+          joinedAt: new Date('2024-01-28'),
+        },
+        {
+          id: '7',
+          name: 'James Brown',
+          email: 'james@example.com',
+          password: 'demo',
+          location: 'Miami, FL',
+          profilePhoto: 'https://images.pexels.com/photos/1674752/pexels-photo-1674752.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Video Editing', 'Photography', 'Drone Operation'],
+          skillsWanted: ['Web Development', 'Digital Marketing', 'Music Production'],
+          availability: ['Weekends', 'Evenings'],
+          rating: 4.7,
+          totalSwaps: 11,
+          joinedAt: new Date('2023-12-03'),
+        },
+        {
+          id: '8',
+          name: 'Maria Garcia',
+          email: 'maria@example.com',
+          password: 'demo',
+          location: 'Denver, CO',
+          profilePhoto: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+          isPublic: true,
+          skillsOffered: ['Spanish Translation', 'Teaching', 'Event Planning'],
+          skillsWanted: ['Digital Marketing', 'Graphic Design', 'Photography'],
+          availability: ['Weekday evenings', 'Sundays'],
+          rating: 4.8,
+          totalSwaps: 7,
+          joinedAt: new Date('2024-02-14'),
+        },
       ];
       this.saveUsers(demoUsers);
     }
+  }
+
+  // Swap request methods
+  private getSwapRequests(): any[] {
+    const requests = localStorage.getItem(SWAP_REQUESTS_KEY);
+    return requests ? JSON.parse(requests) : [];
+  }
+
+  private saveSwapRequests(requests: any[]): void {
+    localStorage.setItem(SWAP_REQUESTS_KEY, JSON.stringify(requests));
+  }
+
+  createSwapRequest(request: {
+    fromUserId: string;
+    toUserId: string;
+    skillOffered: string;
+    skillWanted: string;
+    message?: string;
+  }): any {
+    const requests = this.getSwapRequests();
+    const newRequest = {
+      id: Date.now().toString(),
+      fromUserId: request.fromUserId,
+      toUserId: request.toUserId,
+      skillOffered: request.skillOffered,
+      skillWanted: request.skillWanted,
+      message: request.message || '',
+      status: 'pending',
+      createdAt: new Date(),
+    };
+    
+    requests.push(newRequest);
+    this.saveSwapRequests(requests);
+
+    // Create notification for the recipient
+    this.createNotification({
+      userId: request.toUserId,
+      type: 'swap_request',
+      title: 'New Swap Request',
+      message: `You have a new skill swap request!`,
+      actionUrl: '/swaps',
+      isRead: false
+    });
+
+    return newRequest;
+  }
+
+  getSwapRequestsForUser(userId: string): any[] {
+    const requests = this.getSwapRequests();
+    return requests.filter(req => req.fromUserId === userId || req.toUserId === userId);
+  }
+
+  updateSwapRequest(requestId: string, updates: any): any {
+    const requests = this.getSwapRequests();
+    const requestIndex = requests.findIndex(req => req.id === requestId);
+    
+    if (requestIndex === -1) {
+      throw new Error('Swap request not found');
+    }
+
+    requests[requestIndex] = { ...requests[requestIndex], ...updates };
+    this.saveSwapRequests(requests);
+    return requests[requestIndex];
+  }
+
+  deleteSwapRequest(requestId: string): void {
+    const requests = this.getSwapRequests();
+    const filteredRequests = requests.filter(req => req.id !== requestId);
+    this.saveSwapRequests(filteredRequests);
   }
 }
 
