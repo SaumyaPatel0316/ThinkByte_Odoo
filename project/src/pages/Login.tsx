@@ -102,7 +102,7 @@ export function Login() {
             transition={{ type: "spring", stiffness: 300 }}
           >
             <motion.img
-              src="/public/ThinkByte_Logo.png"
+              src="/ThinkByte_Logo.png"
               alt="ThinkByte Logo"
               className="h-12 w-12 rounded-lg object-contain drop-shadow-lg"
               whileHover={{ rotate: 5 }}

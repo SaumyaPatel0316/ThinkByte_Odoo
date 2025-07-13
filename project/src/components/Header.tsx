@@ -47,7 +47,7 @@ export function Header() {
             <Link to="/" className="flex items-center space-x-2">
               
                 <img 
-                  src="/public/ThinkByte_Logo.png" 
+                  src="/ThinkByte_Logo.png" 
                   alt="ThinkByte Logo" 
                   className="h-8 w-auto object-contain text-sm rounded-lg"
                 />
